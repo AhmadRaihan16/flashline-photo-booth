@@ -1,0 +1,10 @@
+{
+  "name": "flashline-photo-booth",
+  "version": "1.0.0",
+  "private": true,
+  "description": "An instant, in-browser 4-shot photo booth. Vanilla JS, WebRTC, Canvas.",
+  "scripts": {
+    "dev": "npx serve . -l 5500"
+  },
+  "license": "MIT"
+}

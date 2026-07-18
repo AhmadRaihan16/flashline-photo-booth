@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
+<title>Flashline — Web Photo Booth</title>
+<meta name="description" content="An instant, in-browser photo booth. No app, no install — just strike a pose." />
+
+<!-- Tailwind (utility styling) -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          bg: '#16151A',
+          surface: '#FDFBF5',
+          ink: '#232129',
+          muted: '#8B8894',
+          gold: '#FFB627',
+          flash: '#FF3864',
+        },
+        fontFamily: {
+          display: ['"Bebas Neue"', 'sans-serif'],
+          body: ['"Inter"', 'sans-serif'],
+          mono: ['"Space Mono"', 'monospace'],
+        },
+      },
+    },
+  };
+</script>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="bg-bg text-surface font-body min-h-screen overflow-x-hidden">
+
+<!-- ============ AMBIENT MARQUEE BACKDROP ============ -->
+<div class="marquee-glow" aria-hidden="true"></div>
+
+<main id="app" class="relative z-10 min-h-screen flex flex-col">
+
+  <!-- ============ HEADER ============ -->
+  <header class="flex items-center justify-between px-6 md:px-10 py-5">
+    <div class="flex items-center gap-2">
+      <span class="w-3 h-3 rounded-full bg-flash bulb"></span>
+      <span class="font-display text-2xl tracking-wide">FLASHLINE</span>
+    </div>
+    <span class="font-mono text-xs text-muted hidden sm:block">EST. IN-BROWSER · NO APP REQUIRED</span>
+  </header>
+
+  <!-- ============ SCREEN: LANDING ============ -->
+  <section data-screen="landing" class="screen flex-1 flex items-center justify-center px-6 md:px-10 pb-16">
+    <div class="max-w-3xl w-full text-center">
+      <p class="font-mono text-xs uppercase tracking-[0.3em] text-gold mb-4">Step behind the curtain</p>
+      <h1 class="font-display text-6xl md:text-8xl leading-[0.9] mb-6">
+        Four Frames.<br/>One Take.<br/><span class="text-flash">Zero Waiting.</span>
+      </h1>
+      <p class="font-body text-muted text-base md:text-lg max-w-xl mx-auto mb-10">
+        A classic photo booth session, right in your browser. Pick a filter, strike four poses,
+        and walk away with a printable strip — no camera roll required.
+      </p>
+      <button id="btn-start" class="group relative inline-flex items-center gap-3 bg-gold text-ink font-display text-2xl tracking-wide px-10 py-4 rounded-full hover:scale-[1.03] active:scale-[0.98] transition-transform shadow-[0_0_40px_rgba(255,182,39,0.35)]">
+        <span class="shutter-icon"></span>
+        Enter the Booth
+      </button>
+      <p id="landing-error" class="mt-6 font-mono text-sm text-flash hidden"></p>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN: CAMERA ============ -->
+  <section data-screen="camera" class="screen hidden flex-1 flex flex-col items-center px-4 md:px-10 pb-10">
+    <div class="w-full max-w-3xl">
+
+      <!-- Filter selector -->
+      <div id="filter-bar" class="flex gap-2 overflow-x-auto pb-4 mb-4 no-scrollbar" role="tablist" aria-label="Live filters"></div>
+
+      <!-- Camera viewport -->
+      <div class="relative rounded-2xl overflow-hidden border-4 border-surface/10 bg-black aspect-[4/3] booth-frame">
+        <video id="video-feed" class="w-full h-full object-cover mirrored" autoplay playsinline muted></video>
+        <canvas id="capture-canvas" class="hidden"></canvas>
+
+        <!--
+          Frame overlay — swapped by render() when a preset is active.
+          Sits above the video but below countdown/error panels so it's
+          always visible during posing. pointer-events:none means it
+          never intercepts clicks intended for UI elements below.
+        -->
+        <img
+          id="frame-overlay"
+          src=""
+          alt=""
+          aria-hidden="true"
+          class="absolute inset-0 w-full h-full pointer-events-none hidden"
+          style="object-fit:fill; z-index:5;"
+        />
+
+        <!-- Countdown overlay -->
+        <div id="countdown-overlay" class="absolute inset-0 hidden items-center justify-center bg-black/40" style="z-index:10;">
+          <div class="countdown-ring">
+            <span id="countdown-number" class="font-display text-8xl">3</span>
+          </div>
+        </div>
+
+        <!-- Shot progress -->
+        <div id="shot-progress" class="absolute top-3 left-3 flex gap-1.5" style="z-index:10;"></div>
+
+        <!-- Camera error -->
+        <div id="camera-error" class="absolute inset-0 hidden flex-col items-center justify-center gap-3 bg-ink/95 text-center px-6" style="z-index:15;">
+          <p class="font-display text-3xl text-flash">No signal from camera</p>
+          <p id="camera-error-detail" class="font-mono text-sm text-muted max-w-sm"></p>
+          <button id="btn-retry-camera" class="mt-2 font-mono text-xs uppercase tracking-widest border border-surface/30 rounded-full px-5 py-2 hover:bg-surface/10 transition">Try again</button>
+        </div>
+      </div>
+
+      <!-- Controls row -->
+      <div class="flex flex-col gap-4 mt-5">
+
+        <!-- Row 1: Layout + color swatches (hidden when a PNG preset is active) -->
+        <div id="classic-controls" class="flex items-center justify-between flex-wrap gap-4">
+          <div class="flex gap-2" role="tablist" aria-label="Strip layout">
+            <button data-layout="strip" class="layout-btn font-mono text-xs uppercase tracking-widest px-4 py-2 rounded-full border border-surface/20">4-Strip</button>
+            <button data-layout="grid" class="layout-btn font-mono text-xs uppercase tracking-widest px-4 py-2 rounded-full border border-surface/20">2×2 Grid</button>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="font-mono text-xs text-muted uppercase tracking-widest">Color</span>
+            <div id="frame-color-picker" class="flex gap-1.5"></div>
+          </div>
+        </div>
+
+        <!-- Row 2: PNG frame preset picker (always visible) -->
+        <div class="flex items-center gap-3 flex-wrap">
+          <span class="font-mono text-xs text-muted uppercase tracking-widest shrink-0">Frame</span>
+          <div id="frame-preset-picker" class="flex gap-2"></div>
+        </div>
+
+      </div>
+
+      <button id="btn-capture" class="w-full mt-6 bg-flash text-surface font-display text-3xl tracking-wide py-4 rounded-2xl hover:scale-[1.01] active:scale-[0.98] transition-transform">
+        Start Session
+      </button>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN: PREVIEW / EXPORT ============ -->
+  <section data-screen="preview" class="screen hidden flex-1 flex flex-col lg:flex-row items-center justify-center gap-10 px-6 md:px-10 pb-16">
+    <div class="relative">
+      <canvas id="output-canvas" class="max-h-[70vh] w-auto rounded-lg shadow-[0_20px_60px_rgba(0,0,0,0.5)]"></canvas>
+      <span class="dev-light"></span>
+    </div>
+    <div class="max-w-sm w-full text-center lg:text-left">
+      <p class="font-mono text-xs uppercase tracking-[0.3em] text-gold mb-3">Fresh out of the tray</p>
+      <h2 class="font-display text-5xl mb-4">Looking good.</h2>
+      <p class="text-muted mb-8">Your strip developed instantly. Save it, share it, or step back in for another round.</p>
+      <div class="flex flex-col gap-3">
+        <button id="btn-download" class="bg-gold text-ink font-display text-2xl tracking-wide py-3.5 rounded-full hover:scale-[1.02] transition-transform">Download Strip</button>
+        <button id="btn-share" class="border border-surface/25 font-mono text-xs uppercase tracking-widest py-3.5 rounded-full hover:bg-surface/10 transition">Share via QR Code</button>
+        <button id="btn-retake" class="font-mono text-xs uppercase tracking-widest text-muted py-2 hover:text-surface transition">Back to booth</button>
+      </div>
+      <div id="qr-slot" class="mt-6 hidden"></div>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN: GALLERY ============ -->
+  <section data-screen="gallery" class="screen hidden flex-1 flex flex-col items-center px-6 md:px-10 pb-16">
+    <div class="w-full max-w-4xl">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="font-display text-4xl">Your Strips</h2>
+        <button id="btn-new-session" class="font-mono text-xs uppercase tracking-widest border border-surface/25 rounded-full px-5 py-2.5 hover:bg-surface/10 transition">+ New Session</button>
+      </div>
+      <div id="gallery-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
+      <p id="gallery-empty" class="font-mono text-sm text-muted text-center py-16 hidden">No strips yet — your finished sessions land here.</p>
+    </div>
+  </section>
+
+  <!-- ============ NAV DOTS ============ -->
+  <nav id="screen-nav" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-20 bg-ink/80 backdrop-blur border border-surface/10 rounded-full px-5 py-2.5 font-mono text-xs uppercase tracking-widest">
+    <button data-nav="gallery" class="hover:text-gold transition">Gallery</button>
+  </nav>
+
+</main>
+
+<!--
+  Audio-cue hooks: drop a beep.mp3 / shutter.mp3 into /public and set the
+  src attributes below (or assign audioEl.src in app.js) to enable sound.
+  Left empty by default so the app works silently out of the box.
+-->
+<audio id="sfx-beep" preload="auto"></audio>
+<audio id="sfx-shutter" preload="auto"></audio>
+
+<script type="module" src="/js/app.js"></script>
+</body>
+</html>

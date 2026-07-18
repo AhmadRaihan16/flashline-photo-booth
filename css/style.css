@@ -1,0 +1,204 @@
+/* ==========================================================================
+   FLASHLINE — design tokens & signature elements
+   Palette: near-black studio backdrop, warm paper surface,
+            marquee-bulb gold + flash-pink accents.
+   ========================================================================== */
+
+:root {
+  --bg: #16151a;
+  --surface: #fdfbf5;
+  --ink: #232129;
+  --muted: #8b8894;
+  --gold: #ffb627;
+  --flash: #ff3864;
+}
+
+* { -webkit-tap-highlight-color: transparent; }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ---------- Ambient marquee backdrop (signature) ----------
+   A soft field of "bulbs" glowing behind the whole page,
+   like the frame of a photobooth marquee sign. */
+.marquee-glow {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(255,182,39,0.10) 0, transparent 45%),
+    radial-gradient(circle at 90% 15%, rgba(255,56,100,0.10) 0, transparent 40%),
+    radial-gradient(circle at 50% 90%, rgba(255,182,39,0.06) 0, transparent 50%);
+}
+
+.bulb {
+  box-shadow: 0 0 8px 2px rgba(255,56,100,0.7);
+  animation: bulb-pulse 2.4s ease-in-out infinite;
+}
+@keyframes bulb-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.85); }
+}
+
+/* Little shutter icon on the primary CTA */
+.shutter-icon {
+  width: 18px; height: 18px;
+  border-radius: 999px;
+  border: 2px solid var(--ink);
+  display: inline-block;
+  position: relative;
+}
+.shutter-icon::after {
+  content: '';
+  position: absolute; inset: 4px;
+  border-radius: 999px;
+  background: var(--ink);
+}
+
+/* ---------- Booth frame ---------- */
+.booth-frame { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05); }
+.mirrored { transform: scaleX(-1); }
+
+/* ---------- Countdown ring (signature element) ----------
+   A giant glowing marquee-bulb ring standing in for the
+   classic "3.. 2.. 1.." booth countdown. */
+.countdown-ring {
+  width: 180px; height: 180px;
+  border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle, rgba(255,182,39,0.18) 0%, transparent 70%);
+  border: 3px solid var(--gold);
+  box-shadow: 0 0 40px 6px rgba(255,182,39,0.45), inset 0 0 20px rgba(255,182,39,0.2);
+  animation: ring-pulse 1s ease-in-out infinite;
+}
+@keyframes ring-pulse {
+  0% { transform: scale(0.92); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(0.92); }
+}
+#countdown-number { color: var(--gold); text-shadow: 0 0 20px rgba(255,182,39,0.7); }
+
+/* ---------- Shot progress dots ---------- */
+.shot-dot {
+  width: 9px; height: 9px; border-radius: 999px;
+  background: rgba(255,255,255,0.25);
+  transition: background 0.25s ease;
+}
+.shot-dot.filled { background: var(--flash); box-shadow: 0 0 8px rgba(255,56,100,0.8); }
+
+/* ---------- Filter thumbnails ---------- */
+.filter-chip {
+  flex: 0 0 auto;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(253,251,245,0.15);
+  color: var(--muted);
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+.filter-chip.active {
+  background: var(--gold);
+  color: var(--ink);
+  border-color: var(--gold);
+}
+
+/* ---------- Layout buttons ---------- */
+.layout-btn { color: var(--muted); transition: all 0.2s ease; }
+.layout-btn.active { background: var(--surface); color: var(--ink); border-color: var(--surface); }
+
+/* ---------- Frame color swatches ---------- */
+.swatch {
+  width: 20px; height: 20px; border-radius: 999px;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+.swatch.active { border-color: var(--surface); transform: scale(1.15); }
+
+/* ---------- Frame preset picker ---------- */
+.frame-preset-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.15s ease;
+  background: rgba(253,251,245,0.05);
+}
+.frame-preset-btn:hover { background: rgba(253,251,245,0.1); }
+.frame-preset-btn--active {
+  border-color: var(--gold);
+  box-shadow: 0 0 10px rgba(255,182,39,0.35);
+}
+.frame-preset-thumb {
+  width: 44px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+}
+/* "None" button uses a span instead of an img */
+.frame-preset-thumb--none {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.08);
+  color: var(--muted);
+  font-size: 16px;
+  border-radius: 6px;
+}
+.frame-preset-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* ---------- Live CSS filters applied to <video>/<img> preview ---------- */
+.fx-none      { filter: none; }
+.fx-grayscale { filter: grayscale(1) contrast(1.05); }
+.fx-sepia     { filter: sepia(0.75) contrast(1.05) saturate(1.2); }
+.fx-vintage   { filter: sepia(0.35) saturate(1.4) contrast(0.95) brightness(1.05) hue-rotate(-8deg); }
+.fx-cyberpunk { filter: saturate(1.8) contrast(1.25) hue-rotate(280deg) brightness(0.95); }
+.fx-noir      { filter: grayscale(1) contrast(1.6) brightness(0.95); }
+
+/* ---------- Preview "developing tray" dev-light accent ---------- */
+.dev-light {
+  position: absolute; top: -10px; right: -10px;
+  width: 14px; height: 14px; border-radius: 999px;
+  background: var(--gold);
+  box-shadow: 0 0 14px 4px rgba(255,182,39,0.7);
+}
+
+/* ---------- Gallery film-strip card ---------- */
+.strip-card {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
+  aspect-ratio: 3/4;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.strip-card:hover { transform: translateY(-4px); }
+.strip-card img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ---------- Perforated sprocket edge, used on exported canvas wrapper ---------- */
+.sprocket-edge {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.5) 2px, transparent 2px);
+  background-size: 16px 16px;
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .bulb, .countdown-ring { animation: none; }
+}
