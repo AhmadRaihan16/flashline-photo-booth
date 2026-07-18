@@ -79,79 +79,27 @@
       <!-- Filter selector -->
       <div id="filter-bar" class="flex gap-2 overflow-x-auto pb-4 mb-4 no-scrollbar" role="tablist" aria-label="Live filters"></div>
 
-      <!-- Camera viewport container (holds both classic and preset layouts) -->
-      <div id="booth-container" class="relative w-full max-w-lg mx-auto flex justify-center items-center">
-        
-        <!-- Classic Viewport: 4:3 single video feed -->
-        <div id="classic-viewport" class="w-full relative rounded-2xl overflow-hidden border-4 border-surface/10 bg-black aspect-[4/3] booth-frame shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-          <video id="video-feed" class="w-full h-full object-cover mirrored" autoplay playsinline muted></video>
-        </div>
-
-        <!-- Preset Viewport: 840:2400 (vertical strip) with 4 video slots -->
-        <div id="preset-viewport" class="hidden w-full max-w-[280px] relative rounded-2xl overflow-hidden border-4 border-surface/10 bg-black aspect-[840/2400] shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-          <!-- Static frame image acting as the top overlay mask -->
-          <img id="preset-backdrop" class="w-full h-full object-fill absolute inset-0 z-10 pointer-events-none" src="" alt="Frame design" />
-          
-          <!-- Absolute container holding 4 live videos BELOW the backdrop -->
-          <div class="absolute inset-0 z-0">
-            <div class="absolute overflow-hidden" style="left: 6.667%; width: 86.667%; top: 2.5%; height: 21.667%;">
-              <video class="slot-video w-full h-full object-cover mirrored" autoplay playsinline muted></video>
-            </div>
-            <div class="absolute overflow-hidden" style="left: 6.667%; width: 86.667%; top: 26.667%; height: 21.667%;">
-              <video class="slot-video w-full h-full object-cover mirrored" autoplay playsinline muted></video>
-            </div>
-            <div class="absolute overflow-hidden" style="left: 6.667%; width: 86.667%; top: 50.833%; height: 21.667%;">
-              <video class="slot-video w-full h-full object-cover mirrored" autoplay playsinline muted></video>
-            </div>
-            <div class="absolute overflow-hidden" style="left: 6.667%; width: 86.667%; top: 75.0%; height: 21.667%;">
-              <video class="slot-video w-full h-full object-cover mirrored" autoplay playsinline muted></video>
-            </div>
-          </div>
-        </div>
-
-        <!-- Hidden capture-canvas -->
+      <!-- Camera viewport -->
+      <div class="relative rounded-2xl overflow-hidden border-4 border-surface/10 bg-black aspect-[4/3] booth-frame shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+        <video id="video-feed" class="w-full h-full object-cover mirrored" autoplay playsinline muted></video>
         <canvas id="capture-canvas" class="hidden"></canvas>
 
-        <!-- Countdown overlay (common, absolute to booth-container) -->
-        <div id="countdown-overlay" class="absolute inset-0 hidden items-center justify-center bg-black/40 rounded-2xl" style="z-index:20;">
+        <!-- Countdown overlay -->
+        <div id="countdown-overlay" class="absolute inset-0 hidden items-center justify-center bg-black/40" style="z-index:20;">
           <div class="countdown-ring">
             <span id="countdown-number" class="font-display text-8xl">3</span>
           </div>
         </div>
 
-        <!-- Shot progress (common, absolute to booth-container) -->
+        <!-- Shot progress -->
         <div id="shot-progress" class="absolute top-3 left-3 flex gap-1.5" style="z-index:20;"></div>
 
-        <!-- Camera error (common, absolute to booth-container) -->
-        <div id="camera-error" class="absolute inset-0 hidden flex-col items-center justify-center gap-3 bg-ink/95 text-center px-6 rounded-2xl" style="z-index:25;">
+        <!-- Camera error -->
+        <div id="camera-error" class="absolute inset-0 hidden flex-col items-center justify-center gap-3 bg-ink/95 text-center px-6" style="z-index:25;">
           <p class="font-display text-3xl text-flash">No signal from camera</p>
           <p id="camera-error-detail" class="font-mono text-sm text-muted max-w-sm"></p>
           <button id="btn-retry-camera" class="mt-2 font-mono text-xs uppercase tracking-widest border border-surface/30 rounded-full px-5 py-2 hover:bg-surface/10 transition">Try again</button>
         </div>
-
-      </div>
-
-      <!-- Controls row -->
-      <div class="flex flex-col gap-4 mt-5">
-
-        <!-- Row 1: Layout + color swatches (hidden when a PNG preset is active) -->
-        <div id="classic-controls" class="flex items-center justify-between flex-wrap gap-4">
-          <div class="flex gap-2" role="tablist" aria-label="Strip layout">
-            <button data-layout="strip" class="layout-btn font-mono text-xs uppercase tracking-widest px-4 py-2 rounded-full border border-surface/20">4-Strip</button>
-            <button data-layout="grid" class="layout-btn font-mono text-xs uppercase tracking-widest px-4 py-2 rounded-full border border-surface/20">2×2 Grid</button>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="font-mono text-xs text-muted uppercase tracking-widest">Color</span>
-            <div id="frame-color-picker" class="flex gap-1.5"></div>
-          </div>
-        </div>
-
-        <!-- Row 2: PNG frame preset picker (always visible) -->
-        <div class="flex items-center gap-3 flex-wrap">
-          <span class="font-mono text-xs text-muted uppercase tracking-widest shrink-0">Frame</span>
-          <div id="frame-preset-picker" class="flex gap-2"></div>
-        </div>
-
       </div>
 
       <button id="btn-capture" class="w-full mt-6 bg-flash text-surface font-display text-3xl tracking-wide py-4 rounded-2xl hover:scale-[1.01] active:scale-[0.98] transition-transform">
@@ -169,7 +117,31 @@
     <div class="max-w-sm w-full text-center lg:text-left">
       <p class="font-mono text-xs uppercase tracking-[0.3em] text-gold mb-3">Fresh out of the tray</p>
       <h2 class="font-display text-5xl mb-4">Looking good.</h2>
-      <p class="text-muted mb-8">Your strip developed instantly. Save it, share it, or step back in for another round.</p>
+      
+      <!-- Frame customization controls moved here from the camera screen -->
+      <div class="flex flex-col gap-4 mb-8 bg-ink/40 p-5 rounded-2xl border border-surface/5">
+        <!-- PNG frame preset picker -->
+        <div class="flex flex-col gap-2">
+          <span class="font-mono text-xs text-muted uppercase tracking-widest">Select Frame</span>
+          <div id="frame-preset-picker" class="flex gap-2 justify-center lg:justify-start"></div>
+        </div>
+
+        <!-- Classic Layout + color swatches (hidden when a PNG preset is active) -->
+        <div id="classic-controls" class="flex flex-col gap-3 mt-1 pt-3 border-t border-surface/5">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <span class="font-mono text-xs text-muted uppercase tracking-widest">Layout</span>
+            <div class="flex gap-2" role="tablist" aria-label="Strip layout">
+              <button data-layout="strip" class="layout-btn font-mono text-xs uppercase tracking-widest px-3 py-1.5 rounded-full border border-surface/20">4-Strip</button>
+              <button data-layout="grid" class="layout-btn font-mono text-xs uppercase tracking-widest px-3 py-1.5 rounded-full border border-surface/20">2×2 Grid</button>
+            </div>
+          </div>
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <span class="font-mono text-xs text-muted uppercase tracking-widest">Color</span>
+            <div id="frame-color-picker" class="flex gap-1.5"></div>
+          </div>
+        </div>
+      </div>
+
       <div class="flex flex-col gap-3">
         <button id="btn-download" class="bg-gold text-ink font-display text-2xl tracking-wide py-3.5 rounded-full hover:scale-[1.02] transition-transform">Download Strip</button>
         <button id="btn-share" class="border border-surface/25 font-mono text-xs uppercase tracking-widest py-3.5 rounded-full hover:bg-surface/10 transition">Share via QR Code</button>
