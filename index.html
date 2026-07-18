@@ -79,42 +79,56 @@
       <!-- Filter selector -->
       <div id="filter-bar" class="flex gap-2 overflow-x-auto pb-4 mb-4 no-scrollbar" role="tablist" aria-label="Live filters"></div>
 
-      <!-- Camera viewport -->
-      <div class="relative rounded-2xl overflow-hidden border-4 border-surface/10 bg-black aspect-[4/3] booth-frame">
-        <video id="video-feed" class="w-full h-full object-cover mirrored" autoplay playsinline muted></video>
+      <!-- Camera viewport container (holds both classic and preset layouts) -->
+      <div id="booth-container" class="relative w-full max-w-lg mx-auto flex justify-center items-center">
+        
+        <!-- Classic Viewport: 4:3 single video feed -->
+        <div id="classic-viewport" class="w-full relative rounded-2xl overflow-hidden border-4 border-surface/10 bg-black aspect-[4/3] booth-frame shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+          <video id="video-feed" class="w-full h-full object-cover mirrored" autoplay playsinline muted></video>
+        </div>
+
+        <!-- Preset Viewport: 840:2400 (vertical strip) with 4 video slots -->
+        <div id="preset-viewport" class="hidden w-full max-w-[280px] relative rounded-2xl overflow-hidden border-4 border-surface/10 bg-black aspect-[840/2400] shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+          <!-- Static frame image acting as the top overlay mask -->
+          <img id="preset-backdrop" class="w-full h-full object-fill absolute inset-0 z-10 pointer-events-none" src="" alt="Frame design" />
+          
+          <!-- Absolute container holding 4 live videos BELOW the backdrop -->
+          <div class="absolute inset-0 z-0">
+            <div class="absolute overflow-hidden" style="left: 6.667%; width: 86.667%; top: 2.5%; height: 21.667%;">
+              <video class="slot-video w-full h-full object-cover mirrored" autoplay playsinline muted></video>
+            </div>
+            <div class="absolute overflow-hidden" style="left: 6.667%; width: 86.667%; top: 26.667%; height: 21.667%;">
+              <video class="slot-video w-full h-full object-cover mirrored" autoplay playsinline muted></video>
+            </div>
+            <div class="absolute overflow-hidden" style="left: 6.667%; width: 86.667%; top: 50.833%; height: 21.667%;">
+              <video class="slot-video w-full h-full object-cover mirrored" autoplay playsinline muted></video>
+            </div>
+            <div class="absolute overflow-hidden" style="left: 6.667%; width: 86.667%; top: 75.0%; height: 21.667%;">
+              <video class="slot-video w-full h-full object-cover mirrored" autoplay playsinline muted></video>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hidden capture-canvas -->
         <canvas id="capture-canvas" class="hidden"></canvas>
 
-        <!--
-          Frame overlay — swapped by render() when a preset is active.
-          Sits above the video but below countdown/error panels so it's
-          always visible during posing. pointer-events:none means it
-          never intercepts clicks intended for UI elements below.
-        -->
-        <img
-          id="frame-overlay"
-          src=""
-          alt=""
-          aria-hidden="true"
-          class="absolute inset-0 w-full h-full pointer-events-none hidden"
-          style="object-fit:fill; z-index:5;"
-        />
-
-        <!-- Countdown overlay -->
-        <div id="countdown-overlay" class="absolute inset-0 hidden items-center justify-center bg-black/40" style="z-index:10;">
+        <!-- Countdown overlay (common, absolute to booth-container) -->
+        <div id="countdown-overlay" class="absolute inset-0 hidden items-center justify-center bg-black/40 rounded-2xl" style="z-index:20;">
           <div class="countdown-ring">
             <span id="countdown-number" class="font-display text-8xl">3</span>
           </div>
         </div>
 
-        <!-- Shot progress -->
-        <div id="shot-progress" class="absolute top-3 left-3 flex gap-1.5" style="z-index:10;"></div>
+        <!-- Shot progress (common, absolute to booth-container) -->
+        <div id="shot-progress" class="absolute top-3 left-3 flex gap-1.5" style="z-index:20;"></div>
 
-        <!-- Camera error -->
-        <div id="camera-error" class="absolute inset-0 hidden flex-col items-center justify-center gap-3 bg-ink/95 text-center px-6" style="z-index:15;">
+        <!-- Camera error (common, absolute to booth-container) -->
+        <div id="camera-error" class="absolute inset-0 hidden flex-col items-center justify-center gap-3 bg-ink/95 text-center px-6 rounded-2xl" style="z-index:25;">
           <p class="font-display text-3xl text-flash">No signal from camera</p>
           <p id="camera-error-detail" class="font-mono text-sm text-muted max-w-sm"></p>
           <button id="btn-retry-camera" class="mt-2 font-mono text-xs uppercase tracking-widest border border-surface/30 rounded-full px-5 py-2 hover:bg-surface/10 transition">Try again</button>
         </div>
+
       </div>
 
       <!-- Controls row -->

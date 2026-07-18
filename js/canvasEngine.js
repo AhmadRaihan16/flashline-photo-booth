@@ -66,10 +66,24 @@ async function renderPreset(images, { framePreset, filter, targetCanvas }) {
     ctx.restore();
   });
 
-  // Load + overlay the PNG frame ON TOP of the photos.
-  // Awaiting here is critical: toDataURL must not run until this resolves.
+  // Load the frame PNG (which contains solid/fake checkered slots)
   const frameImg = await loadImage(src);
-  ctx.drawImage(frameImg, 0, 0, canvasW, canvasH);
+
+  // Create a temporary canvas to clear out the solid slots
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = canvasW;
+  tempCanvas.height = canvasH;
+  const tempCtx = tempCanvas.getContext('2d');
+  tempCtx.drawImage(frameImg, 0, 0, canvasW, canvasH);
+
+  // Clear the slot areas on the frame image so it is transparent inside the slot rectangles,
+  // allowing the background photos to show through while keeping the outer designs (clouds, stars) intact.
+  slots.forEach((slot) => {
+    tempCtx.clearRect(slot.x, slot.y, slot.w, slot.h);
+  });
+
+  // Overlay the cleared frame ON TOP of the photos
+  ctx.drawImage(tempCanvas, 0, 0);
 
   return canvas.toDataURL('image/png', 1.0);
 }

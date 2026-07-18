@@ -92,7 +92,10 @@ const els = {
   frameColorPicker: document.getElementById('frame-color-picker'),
   framePresetPicker:document.getElementById('frame-preset-picker'),
   classicControls:  document.getElementById('classic-controls'),
-  frameOverlay:     document.getElementById('frame-overlay'),
+  classicViewport:  document.getElementById('classic-viewport'),
+  presetViewport:   document.getElementById('preset-viewport'),
+  presetBackdrop:   document.getElementById('preset-backdrop'),
+  slotVideos:       document.querySelectorAll('.slot-video'),
   btnCapture:       document.getElementById('btn-capture'),
   countdownOverlay: document.getElementById('countdown-overlay'),
   countdownNumber:  document.getElementById('countdown-number'),
@@ -189,7 +192,11 @@ function render() {
   els.screenNav.classList.toggle('hidden', s.currentScreen === 'landing');
 
   // Live filter preview on the video feed
-  els.video.className = `w-full h-full object-cover mirrored ${getFilter(s.activeFilter).cssClass}`;
+  const filterClass = getFilter(s.activeFilter).cssClass;
+  els.video.className = `w-full h-full object-cover mirrored ${filterClass}`;
+  els.slotVideos.forEach((v) => {
+    v.className = `slot-video w-full h-full object-cover mirrored ${filterClass}`;
+  });
   document.querySelectorAll('.filter-chip').forEach((chip) => {
     chip.classList.toggle('active', chip.dataset.filter === s.activeFilter);
   });
@@ -210,17 +217,19 @@ function render() {
     btn.classList.toggle('frame-preset-btn--active', isActive);
   });
 
-  // ---- Live frame overlay ----
-  // When a preset is selected: show the overlay PNG, hide classic controls.
-  // When null: hide overlay, show classic color+layout controls.
+  // ---- Live frame viewport toggle ----
+  // When a preset is selected: show the multi-video preset viewport, hide classic color/layout/viewport.
+  // When null: hide preset viewport, show classic color/layout/viewport.
   const preset = FRAME_PRESETS.find((p) => p.id === s.framePreset) ?? null;
   if (preset) {
-    els.frameOverlay.src = preset.src;
-    els.frameOverlay.classList.remove('hidden');
+    els.presetBackdrop.src = preset.src;
+    els.presetViewport.classList.remove('hidden');
+    els.classicViewport.classList.add('hidden');
     els.classicControls.classList.add('hidden');
   } else {
-    els.frameOverlay.src = '';
-    els.frameOverlay.classList.add('hidden');
+    els.presetBackdrop.src = '';
+    els.presetViewport.classList.add('hidden');
+    els.classicViewport.classList.remove('hidden');
     els.classicControls.classList.remove('hidden');
   }
 
@@ -271,6 +280,9 @@ async function enterCameraScreen() {
   // a later step failed (stream would otherwise keep the camera light on).
   if (store.state.cameraStream) {
     stopCamera(store.state.cameraStream, els.video);
+    els.slotVideos.forEach((v) => {
+      v.srcObject = null;
+    });
   }
 
   // FIX #4 — batch the screen transition reset so render() fires once,
@@ -291,6 +303,11 @@ async function enterCameraScreen() {
   try {
     const stream = await startCamera(els.video);
     store.state.cameraStream = stream;
+    // Bind stream to all slot videos
+    els.slotVideos.forEach((v) => {
+      v.srcObject = stream;
+      v.play().catch(() => {});
+    });
   } catch (err) {
     // FIX #4 cont. — CameraError messages are already human-readable;
     // unknown errors get a safe fallback so the app never shows a raw
@@ -373,6 +390,9 @@ async function runBurstSession() {
       s.cameraStream = null;
     });
     stopCamera(streamToStop, els.video);
+    els.slotVideos.forEach((v) => {
+      v.srcObject = null;
+    });
   }
 
   // Only finalise if all 4 shots were captured successfully.
