@@ -13,51 +13,13 @@ import { runCountdown, wait } from './countdown.js';
 import { composeLayout, downloadDataUrl } from './canvasEngine.js';
 
 const GALLERY_KEY  = 'flashline.gallery.v1';
-const FRAME_COLORS = ['#FFB627', '#FF3864', '#FDFBF5', '#2E4034', '#232129'];
 
-/**
- * FRAME_PRESETS — each entry describes a PNG overlay frame.
- *
- * `slots` are the 4 bounding boxes (in px at EXPORT_SCALE=1) where the
- * captured photos should be drawn BEFORE the overlay PNG is composited
- * on top. Coordinates are measured from the top-left of the canvas.
- *
- * `canvasW` / `canvasH` define the exact pixel dimensions the canvas is
- * sized to match the PNG's inherent aspect ratio.
- *
- * ⚠️  Measure these values against your actual PNG files and adjust if
- *     the slots don't line up — these are calibrated for a typical
- *     4-portrait-slot vertical strip at 2× export scale (840×2400px).
- */
-const FRAME_PRESETS = [
-  {
-    id:      'pink',
-    label:   'Pink Glitter',
-    src:     '/public/frame-pink.png',
-    // Canvas dimensions at 2× export scale
-    canvasW: 840,
-    canvasH: 2400,
-    // Photo slots (x, y, w, h) — photos drawn here, then PNG overlaid on top
-    slots: [
-      { x: 56, y:  60, w: 728, h: 520 },
-      { x: 56, y: 640, w: 728, h: 520 },
-      { x: 56, y: 1220, w: 728, h: 520 },
-      { x: 56, y: 1800, w: 728, h: 520 },
-    ],
-  },
-  {
-    id:      'toystory',
-    label:   'Toy Story',
-    src:     '/public/frame-toystory.png',
-    canvasW: 840,
-    canvasH: 2400,
-    slots: [
-      { x: 56, y:  60, w: 728, h: 520 },
-      { x: 56, y: 640, w: 728, h: 520 },
-      { x: 56, y: 1220, w: 728, h: 520 },
-      { x: 56, y: 1800, w: 728, h: 520 },
-    ],
-  },
+const FRAME_THEMES = [
+  { id: 'retro-glitter-pink', label: 'Glitter Pink' },
+  { id: 'toy-sky-adventure',  label: 'Toy Sky' },
+  { id: 'band-perunggu',      label: 'Perunggu' },
+  { id: 'queen-rock',          label: 'Queen' },
+  { id: 'lany-neon',          label: 'LANY' }
 ];
 
 // ---------------------------------------------------------------------------
@@ -69,8 +31,7 @@ const store = createStore({
   countdownTime:  3,
   capturedImages: [],
   selectedLayout: 'strip',
-  frameColor:     FRAME_COLORS[0],
-  framePreset:    null,   // null = plain color mode; 'pink' | 'toystory' = PNG overlay
+  frameTheme:     'retro-glitter-pink',
   cameraStream:   null,
   cameraError:    null,
   isCapturing:    false,
@@ -89,9 +50,7 @@ const els = {
   captureCanvas:    document.getElementById('capture-canvas'),
   filterBar:        document.getElementById('filter-bar'),
   layoutBtns:       document.querySelectorAll('.layout-btn'),
-  frameColorPicker: document.getElementById('frame-color-picker'),
-  framePresetPicker:document.getElementById('frame-preset-picker'),
-  classicControls:  document.getElementById('classic-controls'),
+  frameThemePicker: document.getElementById('frame-theme-picker'),
   btnCapture:       document.getElementById('btn-capture'),
   countdownOverlay: document.getElementById('countdown-overlay'),
   countdownNumber:  document.getElementById('countdown-number'),
@@ -113,7 +72,7 @@ const els = {
 };
 
 // ---------------------------------------------------------------------------
-// Static UI: filter chips & frame swatches (built once)
+// Static UI: filter chips & frame themes (built once)
 // ---------------------------------------------------------------------------
 FILTERS.forEach((f) => {
   const chip = document.createElement('button');
@@ -127,53 +86,17 @@ FILTERS.forEach((f) => {
   els.filterBar.appendChild(chip);
 });
 
-// Plain color swatches (used in non-preset / classic mode)
-FRAME_COLORS.forEach((color) => {
-  const dot = document.createElement('button');
-  dot.className = 'swatch';
-  dot.style.background = color;
-  dot.dataset.color = color;
-  dot.setAttribute('aria-label', `Frame color ${color}`);
-  dot.addEventListener('click', () => {
-    store.state.frameColor = color;
+// Dynamic frame theme buttons
+FRAME_THEMES.forEach((theme) => {
+  const btn = document.createElement('button');
+  btn.className = 'font-mono text-xs uppercase tracking-wider py-2.5 px-4 rounded-xl border border-surface/10 bg-surface/5 hover:bg-surface/10 hover:border-surface/20 transition-all text-center';
+  btn.dataset.theme = theme.id;
+  btn.textContent = theme.label;
+  btn.addEventListener('click', () => {
+    store.state.frameTheme = theme.id;
   });
-  els.frameColorPicker.appendChild(dot);
+  els.frameThemePicker.appendChild(btn);
 });
-
-// Frame preset buttons: "None" clears back to plain-color mode;
-// each preset card shows a small thumbnail of the overlay PNG.
-(() => {
-  // "None" button
-  const noneBtn = document.createElement('button');
-  noneBtn.className = 'frame-preset-btn';
-  noneBtn.dataset.preset = 'none';
-  noneBtn.setAttribute('aria-label', 'No frame (classic color mode)');
-  noneBtn.innerHTML = `
-    <span class="frame-preset-thumb frame-preset-thumb--none" aria-hidden="true">✕</span>
-    <span class="frame-preset-label">None</span>
-  `;
-  noneBtn.addEventListener('click', () => { store.state.framePreset = null; });
-  els.framePresetPicker.appendChild(noneBtn);
-
-  FRAME_PRESETS.forEach((preset) => {
-    const btn = document.createElement('button');
-    btn.className = 'frame-preset-btn';
-    btn.dataset.preset = preset.id;
-    btn.setAttribute('aria-label', `${preset.label} frame`);
-    btn.innerHTML = `
-      <img
-        src="${preset.src}"
-        alt=""
-        aria-hidden="true"
-        class="frame-preset-thumb"
-        loading="lazy"
-      />
-      <span class="frame-preset-label">${preset.label}</span>
-    `;
-    btn.addEventListener('click', () => { store.state.framePreset = preset.id; });
-    els.framePresetPicker.appendChild(btn);
-  });
-})();
 
 // ---------------------------------------------------------------------------
 // Render — the single function that reflects store.state onto the DOM
@@ -199,24 +122,13 @@ function render() {
     btn.classList.toggle('active', btn.dataset.layout === s.selectedLayout);
   });
 
-  // Frame swatches
-  els.frameColorPicker.querySelectorAll('.swatch').forEach((dot) => {
-    dot.classList.toggle('active', dot.dataset.color === s.frameColor);
+  // Highlight active theme button
+  els.frameThemePicker.querySelectorAll('button').forEach((btn) => {
+    const isActive = btn.dataset.theme === s.frameTheme;
+    btn.classList.toggle('border-gold', isActive);
+    btn.classList.toggle('text-gold', isActive);
+    btn.classList.toggle('bg-surface/10', isActive);
   });
-
-  // ---- Frame preset picker active state ----
-  els.framePresetPicker.querySelectorAll('.frame-preset-btn').forEach((btn) => {
-    const isActive = btn.dataset.preset === (s.framePreset ?? 'none');
-    btn.classList.toggle('frame-preset-btn--active', isActive);
-  });
-
-  // ---- Control panels visibility toggle on Preview screen ----
-  const preset = FRAME_PRESETS.find((p) => p.id === s.framePreset) ?? null;
-  if (preset) {
-    els.classicControls.classList.add('hidden');
-  } else {
-    els.classicControls.classList.remove('hidden');
-  }
 
   // Shot progress dots
   els.shotProgress.innerHTML = '';
@@ -256,10 +168,10 @@ function renderGallery(gallery) {
 store.subscribe(render);
 render();
 
-// Reactive preview update: Re-composes the layout automatically when user modifies layout,
-// color, or frame preset while viewing the preview/export screen.
+// Reactive preview update: layout changes (selectedLayout) & frame theme changes
+// immediately trigger finalizeComposite(true) for instant real-time updates.
 store.subscribe((key, value, state) => {
-  if (state.currentScreen === 'preview' && ['framePreset', 'frameColor', 'selectedLayout'].includes(key)) {
+  if (state.currentScreen === 'preview' && ['selectedLayout', 'frameTheme'].includes(key)) {
     finalizeComposite(true);
   }
 });
@@ -427,25 +339,49 @@ function playSfx(audioEl) {
 // ---------------------------------------------------------------------------
 // Composite export
 // ---------------------------------------------------------------------------
-async function finalizeComposite() {
-  const dateStr = new Date().toISOString().slice(0, 10);
 
-  // Resolve the full preset object (or null for classic color mode)
-  const framePreset = FRAME_PRESETS.find((p) => p.id === store.state.framePreset) ?? null;
+// Guard: prevent concurrent composeLayout calls (e.g. rapid frame clicks).
+let _compositeInFlight = false;
 
-  const dataUrl = await composeLayout({
-    images:        store.state.capturedImages,
-    layout:        store.state.selectedLayout,
-    frameColor:    store.state.frameColor,
-    filterId:      store.state.activeFilter,
-    watermarkText: `FLASHLINE · ${dateStr}`,
-    targetCanvas:  els.outputCanvas,
-    framePreset,   // null → classic path; object → PNG overlay path
-  });
+/**
+ * @param {boolean} [skipNavigate=false] — true when re-rendering from preview
+ *   so we don't double-save to gallery or navigate away.
+ */
+async function finalizeComposite(skipNavigate = false) {
+  if (_compositeInFlight) return;        // drop concurrent calls
+  _compositeInFlight = true;
 
-  store.state.compositeImage = dataUrl;
-  saveToGallery(dataUrl, dateStr);
-  store.state.currentScreen = 'preview';
+  try {
+    const dateStr      = new Date().toISOString().slice(0, 10);
+
+    const dataUrl = await composeLayout({
+      images:        store.state.capturedImages,
+      layout:        store.state.selectedLayout,
+      frameTheme:    store.state.frameTheme,
+      filterId:      store.state.activeFilter,
+      watermarkText: `FLASHLINE · ${dateStr}`,
+      targetCanvas:  els.outputCanvas,
+    });
+
+    store.state.compositeImage = dataUrl;
+
+    if (!skipNavigate) {
+      saveToGallery(dataUrl, dateStr);
+      store.state.currentScreen = 'preview';
+    }
+  } catch (err) {
+    console.error('[Flashline] composeLayout failed:', err);
+    // Show a non-blocking inline error instead of crashing silently.
+    const msg = err?.message ?? 'Unknown render error';
+    // Re-use the existing camera error panel text approach but in preview:
+    const panel = document.createElement('p');
+    panel.className = 'font-mono text-xs text-flash mt-2';
+    panel.textContent = `⚠ Canvas render error: ${msg}`;
+    els.outputCanvas.insertAdjacentElement('afterend', panel);
+    setTimeout(() => panel.remove(), 5000);
+  } finally {
+    _compositeInFlight = false;
+  }
 }
 
 els.btnDownload.addEventListener('click', () => {

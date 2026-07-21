@@ -132,29 +132,22 @@
         <p class="font-mono text-xs uppercase tracking-[0.3em] text-gold mb-3">Fresh out of the tray</p>
         <h2 class="font-display text-5xl mb-4">Looking good.</h2>
 
-        <!-- Frame customization controls moved here from the camera screen -->
+        <!-- Frame customization controls: Unified Programmatic Theme Picker & Layout Selector -->
         <div class="flex flex-col gap-4 mb-8 bg-ink/40 p-5 rounded-2xl border border-surface/5">
-          <!-- PNG frame preset picker -->
           <div class="flex flex-col gap-2">
-            <span class="font-mono text-xs text-muted uppercase tracking-widest">Select Frame</span>
-            <div id="frame-preset-picker" class="flex gap-2 justify-center lg:justify-start"></div>
+            <span class="font-mono text-xs text-muted uppercase tracking-widest">Aesthetic Theme</span>
+            <div id="frame-theme-picker" class="flex flex-wrap gap-2 justify-center lg:justify-start"></div>
           </div>
 
-          <!-- Classic Layout + color swatches (hidden when a PNG preset is active) -->
-          <div id="classic-controls" class="flex flex-col gap-3 mt-1 pt-3 border-t border-surface/5">
+          <div class="flex flex-col gap-3 mt-1 pt-3 border-t border-surface/5">
             <div class="flex items-center justify-between flex-wrap gap-2">
               <span class="font-mono text-xs text-muted uppercase tracking-widest">Layout</span>
-              <div class="flex gap-2" role="tablist" aria-label="Strip layout">
+              <div class="flex gap-2" role="tablist" aria-label="Layout mode">
                 <button data-layout="strip"
                   class="layout-btn font-mono text-xs uppercase tracking-widest px-3 py-1.5 rounded-full border border-surface/20">4-Strip</button>
                 <button data-layout="grid"
-                  class="layout-btn font-mono text-xs uppercase tracking-widest px-3 py-1.5 rounded-full border border-surface/20">2×2
-                  Grid</button>
+                  class="layout-btn font-mono text-xs uppercase tracking-widest px-3 py-1.5 rounded-full border border-surface/20">2×2 Grid</button>
               </div>
-            </div>
-            <div class="flex items-center justify-between flex-wrap gap-2">
-              <span class="font-mono text-xs text-muted uppercase tracking-widest">Color</span>
-              <div id="frame-color-picker" class="flex gap-1.5"></div>
             </div>
           </div>
         </div>

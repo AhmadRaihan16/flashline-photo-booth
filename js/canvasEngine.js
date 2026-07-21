@@ -137,6 +137,115 @@ function drawToyClaw(ctx, x, y) {
   ctx.restore();
 }
 
+/**
+ * Draws a royal crown (Queen theme).
+ */
+function drawCrown(ctx, cx, cy, size, mainColor, gemColor) {
+  ctx.save();
+  ctx.fillStyle = mainColor;
+  // Spike silhouette
+  ctx.beginPath();
+  ctx.moveTo(cx - size,        cy);
+  ctx.lineTo(cx - size * 0.72, cy - size * 0.9);
+  ctx.lineTo(cx - size * 0.38, cy - size * 0.42);
+  ctx.lineTo(cx,               cy - size * 1.15);
+  ctx.lineTo(cx + size * 0.38, cy - size * 0.42);
+  ctx.lineTo(cx + size * 0.72, cy - size * 0.9);
+  ctx.lineTo(cx + size,        cy);
+  ctx.closePath();
+  ctx.fill();
+  // Base band
+  ctx.fillRect(cx - size, cy, size * 2, size * 0.52);
+  // Dark outline
+  ctx.strokeStyle = '#B8860B';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx - size,        cy);
+  ctx.lineTo(cx - size * 0.72, cy - size * 0.9);
+  ctx.lineTo(cx - size * 0.38, cy - size * 0.42);
+  ctx.lineTo(cx,               cy - size * 1.15);
+  ctx.lineTo(cx + size * 0.38, cy - size * 0.42);
+  ctx.lineTo(cx + size * 0.72, cy - size * 0.9);
+  ctx.lineTo(cx + size,        cy);
+  ctx.stroke();
+  // Gems
+  [cx - size * 0.55, cx, cx + size * 0.55].forEach(gx => {
+    ctx.beginPath();
+    ctx.arc(gx, cy + size * 0.2, size * 0.12, 0, Math.PI * 2);
+    ctx.fillStyle = gemColor;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+
+/**
+ * Draws a lightning bolt (Queen theme).
+ */
+function drawLightning(ctx, x, y, w, h, color) {
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x + w * 0.55, y);
+  ctx.lineTo(x + w * 0.1,  y + h * 0.48);
+  ctx.lineTo(x + w * 0.45, y + h * 0.48);
+  ctx.lineTo(x - w * 0.05, y + h);
+  ctx.lineTo(x + w * 0.9,  y + h * 0.52);
+  ctx.lineTo(x + w * 0.55, y + h * 0.52);
+  ctx.lineTo(x + w,        y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+/**
+ * Draws a soft bokeh glow circle (LANY neon theme).
+ */
+function drawBokeh(ctx, x, y, r, color, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+  g.addColorStop(0,   color);
+  g.addColorStop(0.5, color + '80');
+  g.addColorStop(1,   'transparent');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+/**
+ * Draws a batik-inspired nested diamond (Band Perunggu theme).
+ */
+function drawBatikDiamond(ctx, cx, cy, size, strokeColor, fillColor) {
+  ctx.save();
+  ctx.fillStyle = fillColor;
+  ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(cx,               cy - size);
+  ctx.lineTo(cx + size * 0.58, cy);
+  ctx.lineTo(cx,               cy + size);
+  ctx.lineTo(cx - size * 0.58, cy);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  // Inner solid diamond
+  ctx.fillStyle = strokeColor;
+  ctx.beginPath();
+  ctx.moveTo(cx,               cy - size * 0.44);
+  ctx.lineTo(cx + size * 0.26, cy);
+  ctx.lineTo(cx,               cy + size * 0.44);
+  ctx.lineTo(cx - size * 0.26, cy);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
@@ -155,8 +264,8 @@ export async function composeLayout({ images, layout, frameTheme, filterId, wate
   const loaded = await Promise.all(images.map(loadImage));
   const filter = getFilter(filterId);
 
-  // Default to retro-glitter-pink if undefined
-  const theme = frameTheme === 'toy-sky-adventure' ? 'toy-sky-adventure' : 'retro-glitter-pink';
+  const VALID = ['retro-glitter-pink', 'toy-sky-adventure', 'band-perunggu', 'queen-rock', 'lany-neon'];
+  const theme = VALID.includes(frameTheme) ? frameTheme : 'retro-glitter-pink';
 
   return layout === 'grid'
     ? renderGrid(loaded, { theme, filter, watermarkText, targetCanvas })
@@ -191,16 +300,49 @@ function renderStrip(images, { theme, filter, watermarkText, targetCanvas }) {
     drawStar(ctx, 40, 200, 4, 15, 6, 'rgba(255, 255, 255, 0.3)');
     drawStar(ctx, 360, 500, 4, 12, 5, 'rgba(255, 255, 255, 0.3)');
     drawStar(ctx, 35, 800, 4, 18, 7, 'rgba(255, 255, 255, 0.3)');
-  } else {
-    // Sky Blue Background with Clouds
+  } else if (theme === 'toy-sky-adventure') {
     ctx.fillStyle = '#4AA6FF';
     ctx.fillRect(0, 0, width, height);
-
-    // Draw clouds on the background
     drawCloud(ctx, -20, 150, 40);
     drawCloud(ctx, 240, 320, 50);
     drawCloud(ctx, 50, 680, 45);
     drawCloud(ctx, 220, 920, 55);
+
+  } else if (theme === 'band-perunggu') {
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+    bgGrad.addColorStop(0,    '#1A0E08');
+    bgGrad.addColorStop(0.35, '#3D2010');
+    bgGrad.addColorStop(0.65, '#5C3317');
+    bgGrad.addColorStop(1,    '#3D2010');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, width, height);
+    for (let gy = 100; gy < height - 100; gy += 60)
+      for (let gx = 20; gx <= width; gx += 50)
+        drawBatikDiamond(ctx, gx, gy, 8, 'rgba(205,127,50,0.15)', 'rgba(139,69,19,0.07)');
+
+  } else if (theme === 'queen-rock') {
+    ctx.fillStyle = '#080808';
+    ctx.fillRect(0, 0, width, height);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(184,134,11,0.06)';
+    ctx.lineWidth = 1;
+    for (let i = -height; i < width + height; i += 28) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + height, height); ctx.stroke();
+    }
+    ctx.restore();
+
+  } else if (theme === 'lany-neon') {
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+    bgGrad.addColorStop(0,   '#060612');
+    bgGrad.addColorStop(0.5, '#0D0720');
+    bgGrad.addColorStop(1,   '#060612');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, width, height);
+    drawBokeh(ctx, 30,  180, 55, '#FF2D55', 0.08);
+    drawBokeh(ctx, 370, 350, 45, '#7B2FFF', 0.07);
+    drawBokeh(ctx, 50,  650, 50, '#00D4FF', 0.07);
+    drawBokeh(ctx, 360, 900, 60, '#FF2D55', 0.06);
+    drawBokeh(ctx, 200, 500, 38, '#7B2FFF', 0.05);
   }
 
   // Step 2: Calculate symmetrical photo slots
@@ -271,27 +413,18 @@ function renderStrip(images, { theme, filter, watermarkText, targetCanvas }) {
     ctx.fillText('PARTY TIME', width / 2, 1050);
     ctx.restore();
 
-  } else {
-    // toy-sky-adventure
-    // Draw yellow photo borders with red offset drop lines
+  } else if (theme === 'toy-sky-adventure') {
     slots.forEach((slot) => {
       ctx.save();
-      // Red offset line
       ctx.strokeStyle = '#FF3333';
       ctx.lineWidth = 4;
       ctx.strokeRect(slot.x + 3, slot.y + 3, slot.w, slot.h);
-
-      // Yellow primary border
       ctx.strokeStyle = '#FFD700';
       ctx.lineWidth = 4;
       ctx.strokeRect(slot.x, slot.y, slot.w, slot.h);
       ctx.restore();
     });
-
-    // Robotic claw/crane coming down
     drawToyClaw(ctx, width / 2, 85);
-
-    // Playful geometric blocks flanking margins
     ctx.save();
     const drawBlock = (bx, by, label, color) => {
       ctx.fillStyle = color;
@@ -299,46 +432,209 @@ function renderStrip(images, { theme, filter, watermarkText, targetCanvas }) {
       ctx.strokeStyle = '#000000';
       ctx.lineWidth = 1.5;
       ctx.strokeRect(bx, by, 18, 18);
-
       ctx.fillStyle = '#FFFFFF';
       ctx.font = 'bold 12px "Space Mono", monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(label, bx + 9, by + 9);
     };
-
     drawBlock(8, 380, 'A', '#FF3333');
     drawBlock(374, 580, 'B', '#33FF33');
     drawBlock(8, 780, 'C', '#3333FF');
-
-    // Sheriff badges (stars)
     drawStar(ctx, 16, 260, 5, 8, 3.5, '#FFD700');
     drawStar(ctx, 384, 860, 5, 8, 3.5, '#FFD700');
     ctx.restore();
-
-    // Stylized Toy Booth Logo at bottom
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-
-    // Black drop shadow
     ctx.font = 'bold 44px "Bebas Neue", sans-serif';
     ctx.fillStyle = '#16151A';
     ctx.fillText('TOY BOOTH', width / 2 + 4, 1054);
-
-    // Thick Red front text with Yellow borders
     ctx.fillStyle = '#FF3333';
     ctx.strokeStyle = '#FFD700';
     ctx.lineWidth = 4;
     ctx.strokeText('TOY BOOTH', width / 2, 1050);
     ctx.fillText('TOY BOOTH', width / 2, 1050);
     ctx.restore();
+
+  } else if (theme === 'band-perunggu') {
+    // Copper double border + batik corner diamonds
+    slots.forEach(slot => {
+      ctx.save();
+      ctx.strokeStyle = '#B87333';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(slot.x - 3, slot.y - 3, slot.w + 6, slot.h + 6);
+      ctx.strokeStyle = '#FFD700';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(slot.x + 1, slot.y + 1, slot.w - 2, slot.h - 2);
+      [[slot.x, slot.y], [slot.x + slot.w, slot.y], [slot.x, slot.y + slot.h], [slot.x + slot.w, slot.y + slot.h]].forEach(([cx, cy]) => {
+        drawBatikDiamond(ctx, cx, cy, 9, '#FFD700', '#B87333');
+      });
+      ctx.restore();
+    });
+    for (let dy = 120; dy < height - 120; dy += 80) {
+      drawBatikDiamond(ctx, 12,          dy, 7, '#FFD700', '#B87333');
+      drawBatikDiamond(ctx, width - 12,  dy, 7, '#FFD700', '#B87333');
+    }
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 40px "Bebas Neue", sans-serif';
+    ctx.fillStyle = '#3D1A08';
+    ctx.fillText('PERUNGGU', width / 2 + 2, 54);
+    const pGrad = ctx.createLinearGradient(width / 2 - 85, 0, width / 2 + 85, 0);
+    pGrad.addColorStop(0,   '#B87333');
+    pGrad.addColorStop(0.5, '#FFD700');
+    pGrad.addColorStop(1,   '#B87333');
+    ctx.fillStyle = pGrad;
+    ctx.fillText('PERUNGGU', width / 2, 52);
+    ctx.font = '11px "Space Mono", monospace';
+    ctx.fillStyle = '#CD7F32';
+    ctx.fillText('★  BERSAMA SELAMANYA  ★', width / 2, 78);
+    ctx.restore();
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const btGrad = ctx.createLinearGradient(width / 2 - 75, 0, width / 2 + 75, 0);
+    btGrad.addColorStop(0,   '#B87333');
+    btGrad.addColorStop(0.5, '#FFD700');
+    btGrad.addColorStop(1,   '#B87333');
+    ctx.fillStyle = btGrad;
+    ctx.font = 'bold 13px "Space Mono", monospace';
+    ctx.fillText('✦ KENANGAN ABADI ✦', width / 2, 1078);
+    ctx.restore();
+
+  } else if (theme === 'queen-rock') {
+    // Gold double border + ornate L-corner brackets
+    slots.forEach(slot => {
+      ctx.save();
+      ctx.strokeStyle = '#B8860B';
+      ctx.lineWidth = 5;
+      ctx.strokeRect(slot.x - 4, slot.y - 4, slot.w + 8, slot.h + 8);
+      ctx.strokeStyle = '#FFD700';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(slot.x, slot.y, slot.w, slot.h);
+      const cLen = 14;
+      [[slot.x, slot.y, 1, 1], [slot.x + slot.w, slot.y, -1, 1],
+       [slot.x, slot.y + slot.h, 1, -1], [slot.x + slot.w, slot.y + slot.h, -1, -1]
+      ].forEach(([cx, cy, sx, sy]) => {
+        ctx.strokeStyle = '#FFD700';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(cx + sx * cLen, cy);
+        ctx.lineTo(cx, cy);
+        ctx.lineTo(cx, cy + sy * cLen);
+        ctx.stroke();
+      });
+      ctx.restore();
+    });
+    drawCrown(ctx, width / 2, 14, 30, '#FFD700', '#DC143C');
+    drawLightning(ctx, 8,   290, 16, 28, '#FFD700');
+    drawLightning(ctx, 376, 580, 16, 28, '#DC143C');
+    drawLightning(ctx, 8,   790, 16, 28, '#DC143C');
+    drawLightning(ctx, 376, 980, 16, 28, '#FFD700');
+    drawStar(ctx, 18,  160, 5, 7, 3,   '#FFD700');
+    drawStar(ctx, 382, 430, 5, 6, 2.5, '#DC143C');
+    drawStar(ctx, 20,  660, 5, 5, 2,   '#FFD700');
+    drawStar(ctx, 380, 860, 5, 7, 3,   '#DC143C');
+    ctx.save();
+    ctx.strokeStyle = '#DC143C';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(30, 100); ctx.lineTo(width - 30, 100); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(30, 1085); ctx.lineTo(width - 30, 1085); ctx.stroke();
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(30, 104); ctx.lineTo(width - 30, 104); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(30, 1081); ctx.lineTo(width - 30, 1081); ctx.stroke();
+    ctx.restore();
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 50px "Bebas Neue", sans-serif';
+    ctx.fillStyle = '#4A0000';
+    ctx.fillText('QUEEN', width / 2 + 3, 73);
+    const qGrad = ctx.createLinearGradient(width / 2 - 65, 0, width / 2 + 65, 0);
+    qGrad.addColorStop(0,   '#B8860B');
+    qGrad.addColorStop(0.5, '#FFD700');
+    qGrad.addColorStop(1,   '#B8860B');
+    ctx.fillStyle = qGrad;
+    ctx.fillText('QUEEN', width / 2, 70);
+    ctx.restore();
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 11px "Space Mono", monospace';
+    ctx.fillStyle = '#FFD700';
+    ctx.fillText('WE ARE THE CHAMPIONS', width / 2, 1060);
+    ctx.font = '10px "Space Mono", monospace';
+    ctx.fillStyle = '#B8860B';
+    ctx.fillText('★  ★  ★', width / 2, 1080);
+    ctx.restore();
+
+  } else if (theme === 'lany-neon') {
+    // Neon-glow photo borders
+    slots.forEach(slot => {
+      ctx.save();
+      ctx.shadowColor = '#FF2D55';
+      ctx.shadowBlur  = 18;
+      ctx.strokeStyle = '#FF2D55';
+      ctx.lineWidth   = 2.5;
+      ctx.strokeRect(slot.x, slot.y, slot.w, slot.h);
+      ctx.shadowBlur  = 0;
+      ctx.strokeStyle = 'rgba(0,212,255,0.4)';
+      ctx.lineWidth   = 1;
+      ctx.strokeRect(slot.x + 3, slot.y + 3, slot.w - 6, slot.h - 6);
+      ctx.restore();
+    });
+    drawBokeh(ctx, 385, 155, 35, '#FF2D55', 0.14);
+    drawBokeh(ctx, 12,  310, 28, '#00D4FF', 0.12);
+    drawBokeh(ctx, 390, 710, 32, '#7B2FFF', 0.12);
+    drawBokeh(ctx, 8,   960, 25, '#FF2D55', 0.10);
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 58px "Bebas Neue", sans-serif';
+    ctx.shadowColor = '#FF2D55';
+    ctx.shadowBlur  = 30;
+    ctx.fillStyle   = '#FF2D55';
+    ctx.fillText('LANY', width / 2, 56);
+    ctx.shadowBlur  = 8;
+    ctx.fillStyle   = '#FFFFFF';
+    ctx.fillText('LANY', width / 2, 56);
+    ctx.shadowBlur  = 0;
+    ctx.restore();
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '11px "Space Mono", monospace';
+    ctx.fillStyle = 'rgba(0,212,255,0.75)';
+    ctx.fillText('los angeles → new york', width / 2, 82);
+    ctx.restore();
+    ctx.save();
+    ['#FF2D55','#7B2FFF','#00D4FF','#7B2FFF','#FF2D55'].forEach((c, i) => {
+      ctx.shadowColor = c; ctx.shadowBlur = 8;
+      ctx.fillStyle = c;
+      ctx.beginPath();
+      ctx.arc(width / 2 - 32 + i * 16, 1075, 3, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.shadowBlur = 0;
+    ctx.restore();
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 13px "Space Mono", monospace';
+    ctx.shadowColor = '#00D4FF'; ctx.shadowBlur = 12;
+    ctx.fillStyle = '#00D4FF';
+    ctx.fillText('STAY', width / 2, 1055);
+    ctx.shadowBlur = 0;
+    ctx.restore();
   }
 
   // Common simple watermark
   ctx.save();
   ctx.font = 'bold 12px "Space Mono", monospace';
-  ctx.fillStyle = theme === 'retro-glitter-pink' ? 'rgba(255, 255, 255, 0.7)' : '#FFFFFF';
+  ctx.fillStyle = ({ 'retro-glitter-pink': 'rgba(255,255,255,0.7)', 'band-perunggu': 'rgba(205,127,50,0.85)', 'queen-rock': '#FFD700', 'lany-neon': 'rgba(0,212,255,0.85)' })[theme] ?? '#FFFFFF';
   ctx.textAlign = 'center';
   ctx.fillText(watermarkText, width / 2, height - 40);
   ctx.restore();
@@ -366,12 +662,45 @@ function renderGrid(images, { theme, filter, watermarkText, targetCanvas }) {
 
     drawStar(ctx, 50, 150, 4, 15, 6, 'rgba(255, 255, 255, 0.3)');
     drawStar(ctx, 550, 450, 4, 12, 5, 'rgba(255, 255, 255, 0.3)');
-  } else {
+  } else if (theme === 'toy-sky-adventure') {
     ctx.fillStyle = '#4AA6FF';
     ctx.fillRect(0, 0, width, height);
-
     drawCloud(ctx, 40, 120, 50);
     drawCloud(ctx, 480, 360, 60);
+
+  } else if (theme === 'band-perunggu') {
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+    bgGrad.addColorStop(0,   '#1A0E08');
+    bgGrad.addColorStop(0.5, '#5C3317');
+    bgGrad.addColorStop(1,   '#1A0E08');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, width, height);
+    for (let gy = 100; gy < height - 60; gy += 55)
+      for (let gx = 20; gx <= width; gx += 45)
+        drawBatikDiamond(ctx, gx, gy, 7, 'rgba(205,127,50,0.15)', 'rgba(139,69,19,0.07)');
+
+  } else if (theme === 'queen-rock') {
+    ctx.fillStyle = '#080808';
+    ctx.fillRect(0, 0, width, height);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(184,134,11,0.06)';
+    ctx.lineWidth = 1;
+    for (let i = -height; i < width + height; i += 28) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + height, height); ctx.stroke();
+    }
+    ctx.restore();
+
+  } else if (theme === 'lany-neon') {
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+    bgGrad.addColorStop(0,   '#060612');
+    bgGrad.addColorStop(0.5, '#0D0720');
+    bgGrad.addColorStop(1,   '#060612');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, width, height);
+    drawBokeh(ctx, 50,  180, 60, '#FF2D55', 0.08);
+    drawBokeh(ctx, 520, 350, 50, '#7B2FFF', 0.07);
+    drawBokeh(ctx, 80,  580, 55, '#00D4FF', 0.07);
+    drawBokeh(ctx, 480, 620, 45, '#FF2D55', 0.06);
   }
 
   // Step 2: Slot layout
@@ -422,39 +751,178 @@ function renderGrid(images, { theme, filter, watermarkText, targetCanvas }) {
     ctx.strokeText('PARTY TIME', width / 2, 700);
     ctx.fillText('PARTY TIME', width / 2, 700);
     ctx.restore();
-  } else {
+  } else if (theme === 'toy-sky-adventure') {
     slots.forEach((slot) => {
       ctx.save();
       ctx.strokeStyle = '#FF3333';
       ctx.lineWidth = 4;
       ctx.strokeRect(slot.x + 3, slot.y + 3, slot.w, slot.h);
-
       ctx.strokeStyle = '#FFD700';
       ctx.lineWidth = 4;
       ctx.strokeRect(slot.x, slot.y, slot.w, slot.h);
       ctx.restore();
     });
-
     drawToyClaw(ctx, width / 2, 85);
-
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.font = 'bold 44px "Bebas Neue", sans-serif';
     ctx.fillStyle = '#16151A';
     ctx.fillText('TOY BOOTH', width / 2 + 4, 704);
-
     ctx.fillStyle = '#FF3333';
     ctx.strokeStyle = '#FFD700';
     ctx.lineWidth = 4;
     ctx.strokeText('TOY BOOTH', width / 2, 700);
     ctx.fillText('TOY BOOTH', width / 2, 700);
     ctx.restore();
+
+  } else if (theme === 'band-perunggu') {
+    slots.forEach(slot => {
+      ctx.save();
+      ctx.strokeStyle = '#B87333';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(slot.x - 3, slot.y - 3, slot.w + 6, slot.h + 6);
+      ctx.strokeStyle = '#FFD700';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(slot.x + 1, slot.y + 1, slot.w - 2, slot.h - 2);
+      [[slot.x, slot.y], [slot.x + slot.w, slot.y], [slot.x, slot.y + slot.h], [slot.x + slot.w, slot.y + slot.h]].forEach(([cx, cy]) => {
+        drawBatikDiamond(ctx, cx, cy, 9, '#FFD700', '#B87333');
+      });
+      ctx.restore();
+    });
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 44px "Bebas Neue", sans-serif';
+    ctx.fillStyle = '#3D1A08';
+    ctx.fillText('PERUNGGU', width / 2 + 2, 84);
+    const gpGrad = ctx.createLinearGradient(width / 2 - 90, 0, width / 2 + 90, 0);
+    gpGrad.addColorStop(0,   '#B87333');
+    gpGrad.addColorStop(0.5, '#FFD700');
+    gpGrad.addColorStop(1,   '#B87333');
+    ctx.fillStyle = gpGrad;
+    ctx.fillText('PERUNGGU', width / 2, 82);
+    ctx.font = '11px "Space Mono", monospace';
+    ctx.fillStyle = '#CD7F32';
+    ctx.fillText('★  BERSAMA SELAMANYA  ★', width / 2, 106);
+    ctx.restore();
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 14px "Space Mono", monospace';
+    const gbtGrad = ctx.createLinearGradient(width / 2 - 75, 0, width / 2 + 75, 0);
+    gbtGrad.addColorStop(0,   '#B87333');
+    gbtGrad.addColorStop(0.5, '#FFD700');
+    gbtGrad.addColorStop(1,   '#B87333');
+    ctx.fillStyle = gbtGrad;
+    ctx.fillText('✦ KENANGAN ABADI ✦', width / 2, 720);
+    ctx.restore();
+
+  } else if (theme === 'queen-rock') {
+    slots.forEach(slot => {
+      ctx.save();
+      ctx.strokeStyle = '#B8860B';
+      ctx.lineWidth = 5;
+      ctx.strokeRect(slot.x - 4, slot.y - 4, slot.w + 8, slot.h + 8);
+      ctx.strokeStyle = '#FFD700';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(slot.x, slot.y, slot.w, slot.h);
+      const cLen = 14;
+      [[slot.x, slot.y, 1, 1], [slot.x + slot.w, slot.y, -1, 1],
+       [slot.x, slot.y + slot.h, 1, -1], [slot.x + slot.w, slot.y + slot.h, -1, -1]
+      ].forEach(([cx, cy, sx, sy]) => {
+        ctx.strokeStyle = '#FFD700';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(cx + sx * cLen, cy); ctx.lineTo(cx, cy); ctx.lineTo(cx, cy + sy * cLen);
+        ctx.stroke();
+      });
+      ctx.restore();
+    });
+    drawCrown(ctx, width / 2, 14, 32, '#FFD700', '#DC143C');
+    drawStar(ctx,  60, 80, 5, 8, 3, '#FFD700');
+    drawStar(ctx, 540, 80, 5, 8, 3, '#DC143C');
+    drawLightning(ctx, 14,  280, 16, 28, '#FFD700');
+    drawLightning(ctx, 570, 480, 16, 28, '#DC143C');
+    ctx.save();
+    ctx.strokeStyle = '#DC143C';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(40, 120); ctx.lineTo(width - 40, 120); ctx.stroke();
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(40, 124); ctx.lineTo(width - 40, 124); ctx.stroke();
+    ctx.restore();
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 54px "Bebas Neue", sans-serif';
+    ctx.fillStyle = '#4A0000';
+    ctx.fillText('QUEEN', width / 2 + 3, 85);
+    const gqGrad = ctx.createLinearGradient(width / 2 - 70, 0, width / 2 + 70, 0);
+    gqGrad.addColorStop(0,   '#B8860B');
+    gqGrad.addColorStop(0.5, '#FFD700');
+    gqGrad.addColorStop(1,   '#B8860B');
+    ctx.fillStyle = gqGrad;
+    ctx.fillText('QUEEN', width / 2, 82);
+    ctx.restore();
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 12px "Space Mono", monospace';
+    ctx.fillStyle = '#FFD700';
+    ctx.fillText('WE ARE THE CHAMPIONS', width / 2, 720);
+    ctx.restore();
+
+  } else if (theme === 'lany-neon') {
+    slots.forEach(slot => {
+      ctx.save();
+      ctx.shadowColor = '#FF2D55'; ctx.shadowBlur = 18;
+      ctx.strokeStyle = '#FF2D55'; ctx.lineWidth = 2.5;
+      ctx.strokeRect(slot.x, slot.y, slot.w, slot.h);
+      ctx.shadowBlur  = 0;
+      ctx.strokeStyle = 'rgba(0,212,255,0.4)'; ctx.lineWidth = 1;
+      ctx.strokeRect(slot.x + 3, slot.y + 3, slot.w - 6, slot.h - 6);
+      ctx.restore();
+    });
+    drawBokeh(ctx, 555, 180, 40, '#FF2D55', 0.13);
+    drawBokeh(ctx, 20,  350, 35, '#00D4FF', 0.11);
+    drawBokeh(ctx, 540, 580, 38, '#7B2FFF', 0.11);
+    ctx.save();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = 'bold 60px "Bebas Neue", sans-serif';
+    ctx.shadowColor = '#FF2D55'; ctx.shadowBlur = 30;
+    ctx.fillStyle = '#FF2D55';
+    ctx.fillText('LANY', width / 2, 72);
+    ctx.shadowBlur = 8; ctx.fillStyle = '#FFFFFF';
+    ctx.fillText('LANY', width / 2, 72);
+    ctx.shadowBlur = 0;
+    ctx.restore();
+    ctx.save();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = '11px "Space Mono", monospace';
+    ctx.fillStyle = 'rgba(0,212,255,0.75)';
+    ctx.fillText('los angeles → new york', width / 2, 100);
+    ctx.restore();
+    ctx.save();
+    ['#FF2D55','#7B2FFF','#00D4FF','#7B2FFF','#FF2D55'].forEach((c, i) => {
+      ctx.shadowColor = c; ctx.shadowBlur = 8; ctx.fillStyle = c;
+      ctx.beginPath(); ctx.arc(width / 2 - 32 + i * 16, 726, 3, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.shadowBlur = 0;
+    ctx.restore();
+    ctx.save();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = 'bold 14px "Space Mono", monospace';
+    ctx.shadowColor = '#00D4FF'; ctx.shadowBlur = 12;
+    ctx.fillStyle = '#00D4FF';
+    ctx.fillText('STAY', width / 2, 710);
+    ctx.shadowBlur = 0;
+    ctx.restore();
   }
 
   ctx.save();
   ctx.font = 'bold 12px "Space Mono", monospace';
-  ctx.fillStyle = theme === 'retro-glitter-pink' ? 'rgba(255, 255, 255, 0.7)' : '#FFFFFF';
+  ctx.fillStyle = ({ 'retro-glitter-pink': 'rgba(255,255,255,0.7)', 'band-perunggu': 'rgba(205,127,50,0.85)', 'queen-rock': '#FFD700', 'lany-neon': 'rgba(0,212,255,0.85)' })[theme] ?? '#FFFFFF';
   ctx.textAlign = 'center';
   ctx.fillText(watermarkText, width / 2, height - 40);
   ctx.restore();
